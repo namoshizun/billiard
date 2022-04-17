@@ -354,6 +354,7 @@ class Worker(object):
                     assert type_ == TASK
                     job, i, fun, args, kwargs = args_
                     put((ACK, (job, i, now(), pid, synqW_fd)))
+                    print(f'[workloop] acknowledged job {job}')
                     if _wait_for_syn:
                         confirm = wait_for_syn(job)
                         if not confirm:
@@ -363,7 +364,9 @@ class Worker(object):
                     except Exception:
                         result = (False, ExceptionInfo())
                     try:
+                        print(f'[workloop] going to put job {job} result')
                         put((READY, (job, i, result, inqW_fd)))
+                        print(f'[workloop] did put job {job} result')
                     except Exception as exc:
                         _, _, tb = sys.exc_info()
                         try:
@@ -383,6 +386,7 @@ class Worker(object):
                             warning(MAXMEM_USED_FMT.format(
                                 used_kb, max_memory_per_child))
                             return EX_RECYCLE
+                    print(f'[workloop] #tasks completed: {completed}')
 
             debug('worker exiting after %d tasks', completed)
             if maxtasks:
@@ -470,7 +474,9 @@ class Worker(object):
                 debug('worker got sentinel -- exiting')
                 raise SystemExit(EX_OK)
             try:
+                print(f'[receive] polling for new job on {conn} ...')
                 ready, req = _receive(1.0)
+                print(f'[receive] received {req}, ready = {ready}')
                 if not ready:
                     return None
             except (EOFError, IOError) as exc:
